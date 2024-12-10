@@ -1,0 +1,5 @@
+specialChest:
+  world: "world"
+  x: 100
+  y: 64
+  z: 100

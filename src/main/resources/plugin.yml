@@ -1,0 +1,14 @@
+name: GildiePlugin
+version: 1.0
+main: me.fifazak.gildie.GildiePlugin
+depend: [BetterTeams]
+commands:
+  gildia:
+    description: Komenda gildii
+    usage: /gildia
+  gildiamake:
+    description: Tworzenie gildii
+    usage: /gildiamake
+  gildiaund:
+    description: Anulowanie tworzenia gildii
+    usage: /gildiaund
