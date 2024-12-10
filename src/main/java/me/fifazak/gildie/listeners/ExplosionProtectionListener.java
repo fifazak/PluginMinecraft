@@ -1,11 +1,11 @@
 package me.fifazak.gildie.listeners;
 
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
-import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
+import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.protection.ApplicableRegionSet;
-import com.sk89q.worldguard.protection.managers.RegionContainer;
 import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
+import com.sk89q.worldguard.protection.regions.RegionContainer;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
@@ -19,10 +19,9 @@ import org.bukkit.event.entity.EntityExplodeEvent;
 public class ExplosionProtectionListener implements Listener {
 
     private boolean isInGuildRegion(Location location) {
-        WorldGuardPlugin wg = getWorldGuard();
-        if (wg == null) return false;
+        com.sk89q.worldguard.WorldGuard wg = WorldGuard.getInstance(); // Zmieniono sposób importowania
 
-        RegionContainer container = wg.getRegionContainer();
+        RegionContainer container = wg.getPlatform().getRegionContainer(); // Użyj getPlatform().getRegionContainer()
         RegionManager manager = container.get(BukkitAdapter.adapt(location.getWorld()));
         if (manager == null) return false;
 
@@ -33,10 +32,6 @@ public class ExplosionProtectionListener implements Listener {
             }
         }
         return false;
-    }
-
-    private WorldGuardPlugin getWorldGuard() {
-        return (WorldGuardPlugin) org.bukkit.Bukkit.getPluginManager().getPlugin("WorldGuard");
     }
 
     @EventHandler
@@ -54,11 +49,9 @@ public class ExplosionProtectionListener implements Listener {
     public void onEntityExplode(EntityExplodeEvent event) {
         Location location = event.getLocation();
 
-        if (isInGuildRegion(location)) {
+        if (isInGuildRegion(location) && event.getEntityType() == EntityType.CREEPER) { // Dodano sprawdzenie typu encji
             event.setCancelled(true);
-            event.getEntity().getWorld().sendMessage(
-                    ChatColor.RED + "Wybuchy na terenie gildii są zablokowane!"
-            );
+            location.getWorld().getPlayers().forEach(player -> player.sendMessage(ChatColor.RED + "Wybuchy creeperów na terenie gildii są zablokowane!"));
         }
     }
 }

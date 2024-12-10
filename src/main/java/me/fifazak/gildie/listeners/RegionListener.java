@@ -1,11 +1,11 @@
 package me.fifazak.gildie.listeners;
 
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
-import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
+import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.protection.ApplicableRegionSet;
-import com.sk89q.worldguard.protection.managers.RegionContainer;
 import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
+import com.sk89q.worldguard.protection.regions.RegionContainer;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
@@ -16,10 +16,9 @@ import org.bukkit.event.player.PlayerMoveEvent;
 public class RegionListener implements Listener {
 
     private boolean isInGuildRegion(Location location) {
-        WorldGuardPlugin wg = getWorldGuard();
-        if (wg == null) return false;
+        com.sk89q.worldguard.WorldGuard wg = WorldGuard.getInstance(); // Zmieniono sposób importowania
 
-        RegionContainer container = wg.getRegionContainer();
+        RegionContainer container = wg.getPlatform().getRegionContainer(); // Użyj getPlatform().getRegionContainer()
         RegionManager manager = container.get(BukkitAdapter.adapt(location.getWorld()));
         if (manager == null) return false;
 
@@ -30,10 +29,6 @@ public class RegionListener implements Listener {
             }
         }
         return false;
-    }
-
-    private WorldGuardPlugin getWorldGuard() {
-        return (WorldGuardPlugin) org.bukkit.Bukkit.getPluginManager().getPlugin("WorldGuard");
     }
 
     @EventHandler
