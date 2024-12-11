@@ -7,22 +7,18 @@ import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.regions.CuboidRegion;
 import com.sk89q.worldedit.regions.Region;
-import com.sk89q.worldedit.world.World;
-import com.sk89q.worldedit.IncompleteRegionException;
-import com.sk89q.worldedit.session.EditSession;
 import com.sk89q.worldedit.session.LocalSession;
+import com.sk89q.worldedit.world.World;
 import com.sk89q.worldguard.WorldGuard;
-import com.sk89q.worldguard.protection.flags.DefaultFlag;
-import com.sk89q.worldguard.protection.flags.StateFlag;
+import com.sk89q.worldguard.protection.flags.Flags;
 import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.ProtectedCuboidRegion;
-import com.sk89q.worldguard.protection.regions.RegionContainer;
 import org.bukkit.ChatColor;
 import org.bukkit.Particle;
-import org.bukkit.entity.Player;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.UUID;
@@ -35,6 +31,11 @@ public class GuildCommand implements CommandExecutor {
         this.plugin = plugin;
     }
 
+    private static final String ONLY_TEAM_OWNER = ChatColor.RED + "Tylko lider drużyny może %s!";
+    private static final String REGION_CREATED = ChatColor.GREEN + "Gildia została stworzona i zabezpieczona!";
+    private static final String REGION_ALREADY_EXISTS = ChatColor.RED + "Drużyna już ma przypisany region gildii!";
+    private static final String SELECTION_ERROR = ChatColor.RED + "Nie zaznaczyłeś poprawnego terenu!";
+
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!(sender instanceof Player)) {
@@ -44,24 +45,30 @@ public class GuildCommand implements CommandExecutor {
 
         Player player = (Player) sender;
 
-        if (command.getName().equalsIgnoreCase("gildia")) {
-            onGildiaCommand(player);
-        } else if (command.getName().equalsIgnoreCase("gildiamake")) {
-            onGildiaMakeCommand(player);
-        } else if (command.getName().equalsIgnoreCase("gildiaund")) {
-            onGildiaUndCommand(player);
+        switch (command.getName().toLowerCase()) {
+            case "gildia":
+                onGildiaCommand(player);
+                break;
+            case "gildiamake":
+                onGildiaMakeCommand(player);
+                break;
+            case "gildiaund":
+                onGildiaUndCommand(player);
+                break;
+            default:
+                return false;
         }
         return true;
     }
 
     private void onGildiaCommand(Player player) {
         if (!isTeamOwner(player)) {
-            player.sendMessage(ChatColor.RED + "Tylko lider drużyny może tworzyć gildie!");
+            player.sendMessage(String.format(ONLY_TEAM_OWNER, "tworzyć gildie"));
             return;
         }
-        try (EditSession editSession = WorldEdit.getInstance().newEditSession(BukkitAdapter.adapt(player.getWorld()))) {
-            LocalSession localSession = WorldEdit.getInstance().getSession(player);
-            World world = editSession.getWorld();
+        try {
+            LocalSession localSession = WorldEdit.getInstance().getSessionManager().get(BukkitAdapter.adapt(player));
+            World world = BukkitAdapter.adapt(player.getWorld());
             BlockVector3 playerLocation = BukkitAdapter.asBlockVector(player.getLocation());
 
             // Obliczanie rogów obszaru 200x200
@@ -70,35 +77,34 @@ public class GuildCommand implements CommandExecutor {
 
             // Tworzenie zaznaczenia
             CuboidRegion selection = new CuboidRegion(world, min, max);
-            localSession.setSelection(world, selection);
+            localSession.getRegionSelector(world).select(selection);
 
-            // Wyświetlanie znaczników (przykład z cząsteczkami)
-            player.getWorld().spawnParticle(Particle.FLAME, min.toLocation(player.getWorld()), 10, 0.5, 0.5, 0.5, 0);
-            player.getWorld().spawnParticle(Particle.FLAME, max.toLocation(player.getWorld()), 10, 0.5, 0.5, 0.5, 0);
+            // Wyświetlanie cząsteczek
+            player.getWorld().spawnParticle(Particle.FLAME, player.getLocation(), 10, 0.5, 0.5, 0.5);
 
             player.sendMessage(ChatColor.GREEN + "Teren gildii został zaznaczony! Użyj /gildiamake aby utworzyć.");
-        } catch (IncompleteRegionException e) {
-            player.sendMessage(ChatColor.RED + "Wystąpił błąd podczas zaznaczania terenu.");
+        } catch (Exception e) {
+            player.sendMessage(SELECTION_ERROR);
         }
     }
 
     private void onGildiaMakeCommand(Player player) {
         if (!isTeamOwner(player)) {
-            player.sendMessage(ChatColor.RED + "Tylko lider drużyny może tworzyć gildie!");
+            player.sendMessage(String.format(ONLY_TEAM_OWNER, "tworzyć gildie"));
             return;
         }
 
-        Team team = TeamManager.get().getTeam(player);
+        Team team = TeamManager.getInstance().getTeam(player);
         if (team == null) {
             player.sendMessage(ChatColor.RED + "Nie jesteś w żadnej drużynie!");
             return;
         }
 
-        // Pobierz instancję WorldGuard
-        com.sk89q.worldguard.WorldGuard wg = WorldGuard.getInstance();
+        RegionManager manager = WorldGuard.getInstance()
+                .getPlatform()
+                .getRegionContainer()
+                .get(BukkitAdapter.adapt(player.getWorld()));
 
-        RegionContainer container = wg.getPlatform().getRegionContainer();
-        RegionManager manager = container.get(BukkitAdapter.adapt(player.getWorld()));
         if (manager == null) {
             player.sendMessage(ChatColor.RED + "Błąd wczytywania regionów!");
             return;
@@ -106,65 +112,55 @@ public class GuildCommand implements CommandExecutor {
 
         String regionName = "guild_" + team.getName();
         if (manager.getRegion(regionName) != null) {
-            player.sendMessage(ChatColor.RED + "Drużyna już ma przypisany region gildii!");
+            player.sendMessage(REGION_ALREADY_EXISTS);
             return;
         }
 
-        try (EditSession editSession = WorldEdit.getInstance().newEditSession(BukkitAdapter.adapt(player.getWorld()))) {
-            LocalSession localSession = WorldEdit.getInstance().getSession(player);
-            Region selection = localSession.getSelection(editSession.getWorld());
+        try {
+            LocalSession localSession = WorldEdit.getInstance().getSessionManager().get(BukkitAdapter.adapt(player));
+            Region selection = localSession.getSelection(localSession.getSelectionWorld());
 
             if (selection instanceof CuboidRegion) {
                 CuboidRegion cuboidRegion = (CuboidRegion) selection;
-                BlockVector3 min = cuboidRegion.getMinimumPoint();
-                BlockVector3 max = cuboidRegion.getMaximumPoint();
-
-                // Utwórz region
-                ProtectedCuboidRegion guildRegion = new ProtectedCuboidRegion(regionName, min, max);
+                ProtectedCuboidRegion guildRegion = new ProtectedCuboidRegion(regionName,
+                        cuboidRegion.getMinimumPoint(), cuboidRegion.getMaximumPoint());
 
                 // Ustaw flagi dla regionu
-                guildRegion.setFlag(DefaultFlag.BUILD, StateFlag.State.DENY); // Blokuj budowanie
-                guildRegion.setFlag(DefaultFlag.PVP, StateFlag.State.DENY);   // Blokuj PVP
-                // Dodaj inne flagi według potrzeb
+                guildRegion.setFlag(Flags.BUILD, StateFlag.State.DENY);
+                guildRegion.setFlag(Flags.PVP, StateFlag.State.DENY);
 
-                // Dodaj członków drużyny do regionu (zezwól na budowanie)
-                for (UUID member : team.getMembers().getUuids()) {
+                // Dodaj członków drużyny
+                for (UUID member : team.getMembers()) {
                     guildRegion.getMembers().addPlayer(member);
                 }
 
                 manager.addRegion(guildRegion);
-                player.sendMessage(ChatColor.GREEN + "Gildia została stworzona i zabezpieczona!");
-
-                // Usuń zaznaczenie po utworzeniu gildii
-                localSession.setSelection(editSession.getWorld(), null);
+                player.sendMessage(REGION_CREATED);
             } else {
-                player.sendMessage(ChatColor.RED + "Nieprawidłowe zaznaczenie!");
+                player.sendMessage(SELECTION_ERROR);
             }
-        } catch (IncompleteRegionException e) {
-            player.sendMessage(ChatColor.RED + "Nie zaznaczyłeś terenu!");
+        } catch (Exception e) {
+            player.sendMessage(SELECTION_ERROR);
         }
     }
 
     private void onGildiaUndCommand(Player player) {
         if (!isTeamOwner(player)) {
-            player.sendMessage(ChatColor.RED + "Tylko lider drużyny może anulować tworzenie gildii!");
+            player.sendMessage(String.format(ONLY_TEAM_OWNER, "anulować tworzenie gildii"));
             return;
         }
-        try (EditSession editSession = WorldEdit.getInstance().newEditSession(BukkitAdapter.adapt(player.getWorld()))) {
-            LocalSession localSession = WorldEdit.getInstance().getSession(player);
-            com.sk89q.worldedit.world.World world = editSession.getWorld();
-
-            // Usuwanie zaznaczenia
-            localSession.setSelection(world, null);
+        try {
+            LocalSession localSession = WorldEdit.getInstance().getSessionManager().get(BukkitAdapter.adapt(player));
+            localSession.setRegionSelector(localSession.getSelectionWorld(), null);
 
             player.sendMessage(ChatColor.YELLOW + "Tworzenie gildii zostało anulowane.");
-        } catch (IncompleteRegionException e) {
+        } catch (Exception e) {
             player.sendMessage(ChatColor.RED + "Wystąpił błąd podczas anulowania tworzenia gildii.");
         }
     }
 
     private boolean isTeamOwner(Player player) {
-        Team team = TeamManager.get().getTeam(player);
-        return team != null && team.getOwner().getUuid().equals(player.getUniqueId());
+        Team team = TeamManager.getInstance().getTeam(player);
+        return team != null && team.getOwner().equals(player.getUniqueId());
     }
 }
