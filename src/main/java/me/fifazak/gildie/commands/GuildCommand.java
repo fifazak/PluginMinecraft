@@ -1,16 +1,17 @@
 package me.fifazak.gildie.commands;
 
 import com.booksaw.betterTeams.Team;
-import com.booksaw.betterTeams.TeamManager;
+import com.booksaw.betterTeams.team.TeamManager;
+import com.sk89q.worldedit.LocalSession;
 import com.sk89q.worldedit.WorldEdit;
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.regions.CuboidRegion;
 import com.sk89q.worldedit.regions.Region;
-import com.sk89q.worldedit.session.LocalSession;
 import com.sk89q.worldedit.world.World;
 import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.protection.flags.Flags;
+import com.sk89q.worldguard.protection.flags.StateFlag;
 import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.ProtectedCuboidRegion;
 import org.bukkit.ChatColor;
@@ -66,6 +67,7 @@ public class GuildCommand implements CommandExecutor {
             player.sendMessage(String.format(ONLY_TEAM_OWNER, "tworzyć gildie"));
             return;
         }
+
         try {
             LocalSession localSession = WorldEdit.getInstance().getSessionManager().get(BukkitAdapter.adapt(player));
             World world = BukkitAdapter.adapt(player.getWorld());
@@ -75,9 +77,11 @@ public class GuildCommand implements CommandExecutor {
             BlockVector3 min = playerLocation.subtract(100, 0, 100);
             BlockVector3 max = playerLocation.add(100, 0, 100);
 
-            // Tworzenie zaznaczenia
+            // Tworzenie CuboidRegion
             CuboidRegion selection = new CuboidRegion(world, min, max);
-            localSession.getRegionSelector(world).select(selection);
+
+            // Ustawianie selekcji
+            localSession.setSelection(world, selection);
 
             // Wyświetlanie cząsteczek
             player.getWorld().spawnParticle(Particle.FLAME, player.getLocation(), 10, 0.5, 0.5, 0.5);
@@ -94,7 +98,7 @@ public class GuildCommand implements CommandExecutor {
             return;
         }
 
-        Team team = TeamManager.getInstance().getTeam(player);
+        Team team = TeamManager.getManager().getTeam(player);
         if (team == null) {
             player.sendMessage(ChatColor.RED + "Nie jesteś w żadnej drużynie!");
             return;
@@ -118,7 +122,7 @@ public class GuildCommand implements CommandExecutor {
 
         try {
             LocalSession localSession = WorldEdit.getInstance().getSessionManager().get(BukkitAdapter.adapt(player));
-            Region selection = localSession.getSelection(localSession.getSelectionWorld());
+            Region selection = localSession.getSelection();
 
             if (selection instanceof CuboidRegion) {
                 CuboidRegion cuboidRegion = (CuboidRegion) selection;
@@ -130,7 +134,7 @@ public class GuildCommand implements CommandExecutor {
                 guildRegion.setFlag(Flags.PVP, StateFlag.State.DENY);
 
                 // Dodaj członków drużyny
-                for (UUID member : team.getMembers()) {
+                for (UUID member : team.getMembers().getAllMembers()) {
                     guildRegion.getMembers().addPlayer(member);
                 }
 
@@ -151,7 +155,7 @@ public class GuildCommand implements CommandExecutor {
         }
         try {
             LocalSession localSession = WorldEdit.getInstance().getSessionManager().get(BukkitAdapter.adapt(player));
-            localSession.setRegionSelector(localSession.getSelectionWorld(), null);
+            localSession.setSelection(localSession.getSelectionWorld(), null);
 
             player.sendMessage(ChatColor.YELLOW + "Tworzenie gildii zostało anulowane.");
         } catch (Exception e) {
@@ -160,7 +164,7 @@ public class GuildCommand implements CommandExecutor {
     }
 
     private boolean isTeamOwner(Player player) {
-        Team team = TeamManager.getInstance().getTeam(player);
-        return team != null && team.getOwner().equals(player.getUniqueId());
+        Team team = TeamManager.getManager().getTeam(player);
+        return team != null && team.getLeader().equals(player.getUniqueId());
     }
 }
