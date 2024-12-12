@@ -1,6 +1,6 @@
 package me.fifazak.gildie.listeners;
 
-import me.fifazak.gildie.GildiePlugin;
+
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -15,11 +15,16 @@ import org.bukkit.inventory.ItemStack;
 import java.util.Map;
 
 public class ChestListener implements Listener {
-
     private final GildiePlugin plugin;
+
 
     public ChestListener(GildiePlugin plugin) {
         this.plugin = plugin;
+    }
+
+    public interface GildiePlugin {
+        Location getChestLocation();
+        boolean isPlayerTeamLeader(Player player);
     }
 
     private static final Map<Material, Integer> REQUIRED_ITEMS = Map.of(
@@ -43,9 +48,13 @@ public class ChestListener implements Listener {
         if (!isGuildChest(clickedLocation)) {
             return;
         }
-
-        Player player = event.getPlayer();
-        Chest chest = (Chest) event.getClickedBlock().getState();
+    Player player = event.getPlayer();
+    if (!plugin.isPlayerTeamLeader(player)) {
+        player.sendMessage(ChatColor.RED + "Tylko lider drużyny może korzystać z tej skrzyni!");
+        return;
+    }
+    Chest chest = (Chest) event.getClickedBlock().getState();
+        Chest chest1 = (Chest) event.getClickedBlock().getState();
         Inventory inventory = chest.getInventory();
 
         if (hasRequiredItems(inventory)) {
