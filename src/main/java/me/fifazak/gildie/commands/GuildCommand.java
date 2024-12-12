@@ -63,7 +63,7 @@ public class GuildCommand implements CommandExecutor {
 
         Team team = Team.getTeam(player.getUniqueId());
 
-        if (team == null || !team.getRank(player.getUniqueId()).equals(PlayerRank.OWNER)) {
+        if (team == null || !team.getTeamPlayer(player).getRank().equals(PlayerRank.OWNER)) {
             player.sendMessage(ChatColor.RED + "Tylko lider drużyny może anulować tworzenie gildii!");
             return;
         }
@@ -86,28 +86,24 @@ public class GuildCommand implements CommandExecutor {
     private void onGildiaCommand(Player player) {
         Team team = Team.getTeam(player.getUniqueId());
 
-        if (team == null || !team.getRank(player.getUniqueId()).equals(PlayerRank.OWNER)) {
+        if (team == null || !team.getTeamPlayer(player).getRank().equals(PlayerRank.OWNER)) {
             player.sendMessage(String.format("Tylko lider drużyny może %s.", "tworzyć gildie"));
             return;
         }
 
         try {
-            com.sk89q.worldedit.world.World adaptedWorld = BukkitAdapter.adapt(player.getWorld());
             BlockVector3 playerLocation = BukkitAdapter.asBlockVector(player.getLocation());
+            int y = player.getLocation().getBlockY();
 
-            BlockVector3 min = playerLocation.subtract(200, 1000, 200);
-            BlockVector3 max = playerLocation.add(200, 1000, 200);
-
-            LocalSession localSession = WorldEdit.getInstance().getSessionManager().get(BukkitAdapter.adapt(player));
-            if (localSession == null) {
-                player.sendMessage(ChatColor.RED + "Nie masz aktywnej sesji WorldEdit!");
-                return;
+            for (int x = playerLocation.x() - 200; x <= playerLocation.x() + 200; x += 5) {
+                player.getWorld().spawnParticle(Particle.FLAME, x + 0.5, y + 0.5, playerLocation.z() - 200 + 0.5, 1, 0, 0, 0, 0);
+                player.getWorld().spawnParticle(Particle.FLAME, x + 0.5, y + 0.5, playerLocation.z() + 200 + 0.5, 1, 0, 0, 0, 0);
             }
-
-            // Poprawiona linia - używamy select zamiast selectPrimary
-            localSession.getRegionSelector(adaptedWorld).select(min, max);
-            player.getWorld().spawnParticle(Particle.FLAME, player.getLocation(), 10, 0.5, 0.5, 0.5);
-
+            for (int z = playerLocation.z() - 200; z <= playerLocation.z() + 200; z += 5) {
+                player.getWorld().spawnParticle(Particle.FLAME, playerLocation.x() - 200 + 0.5, y + 0.5, z + 0.5, 1, 0, 0, 0, 0);
+                player.getWorld().spawnParticle(Particle.FLAME, playerLocation.x() + 200 + 0.5, y + 0.5, z + 0.5, 1, 0, 0, 0, 0);
+            }
+            player.sendMessage(ChatColor.GREEN + "Teren gildii został zaznaczony! Użyj /gildiamake, aby stworzyć ochronę.");
             player.sendMessage(ChatColor.GREEN + "Teren gildii został zaznaczony! Użyj /gildiamake aby utworzyć.");
         } catch (Exception e) {
             player.sendMessage(ChatColor.RED + "Wystąpił błąd podczas zaznaczania terenu.");
@@ -123,7 +119,7 @@ public class GuildCommand implements CommandExecutor {
             return;
         }
 
-        if (!team.getRank(player.getUniqueId()).equals(PlayerRank.OWNER)) {
+        if (!team.getTeamPlayer(player).getRank().equals(PlayerRank.OWNER)) {
             player.sendMessage(String.format("Tylko lider drużyny może %s.", "tworzyć gildie"));
             return;
         }

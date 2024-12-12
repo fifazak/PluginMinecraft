@@ -10,7 +10,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public class GildiePlugin extends JavaPlugin {
 
-    private Location chestLocation;
+    private Location chestLocation = null;
 
     @Override
     public void onEnable() {
@@ -18,22 +18,33 @@ public class GildiePlugin extends JavaPlugin {
         getLogger().info("Plugin Gildie został włączony!");
 
         // Rejestracja komend
-        getCommand("gildia").setExecutor(new GuildCommand(this));
-        getCommand("gildiamake").setExecutor(new GuildCommand(this));
-        getCommand("gildiaund").setExecutor(new GuildCommand(this));
+        if (getCommand("gildia") != null) {
+            getCommand("gildia").setExecutor(new GuildCommand(this));
+        }
+
+        if (getCommand("gildiamake") != null) {
+            getCommand("gildiamake").setExecutor(new GuildCommand(this));
+        }
+
+        if (getCommand("gildiaund") != null) {
+            getCommand("gildiaund").setExecutor(new GuildCommand(this));
+        }
 
         // Rejestracja listenerów
         getServer().getPluginManager().registerEvents(new ExplosionProtectionListener(), this);
-        getServer().getPluginManager().registerEvents(new ChestListener(this), this); // Dodanie this do konstruktora
+        getServer().getPluginManager().registerEvents(new ChestListener(), this);
         getServer().getPluginManager().registerEvents(new FireProtectionListener(), this);
         getServer().getPluginManager().registerEvents(new RegionListener(), this);
 
         // Wczytaj lokalizację skrzynki z config.yml
         chestLocation = new Location(
-                getServer().getWorld(getConfig().getString("specialChest.world")),
-                getConfig().getInt("specialChest.x"),
-                getConfig().getInt("specialChest.y"),
-                getConfig().getInt("specialChest.z")
+                getServer().getWorld(getConfig().getString("specialChest.world", "world")),
+
+                getConfig().getInt("specialChest.x", 0),
+
+                getConfig().getInt("specialChest.y", 64),
+
+                getConfig().getInt("specialChest.z", 0)
         );
     }
 

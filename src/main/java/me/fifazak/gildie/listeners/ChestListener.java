@@ -15,10 +15,10 @@ import org.bukkit.inventory.ItemStack;
 import java.util.Map;
 
 public class ChestListener implements Listener {
-    private final GildiePlugin plugin;
+    private GildiePlugin plugin;
 
 
-    public ChestListener(GildiePlugin plugin) {
+    public ChestListener() {
         this.plugin = plugin;
     }
 
@@ -34,8 +34,10 @@ public class ChestListener implements Listener {
             Material.OBSIDIAN, 32,
             Material.SUGAR_CANE, 32,
             Material.TNT, 16,
-            Material.ANVIL, 16,
-            Material.ENCHANTING_TABLE, 4
+            Material.ANVIL, 8,
+            Material.ENCHANTING_TABLE, 4,
+            Material.GOLD_INGOT, 32,
+            Material.IRON_BLOCK, 16
     );
 
     @EventHandler
