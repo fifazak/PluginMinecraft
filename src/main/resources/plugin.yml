@@ -1,15 +1,11 @@
-name: GildiePlugin
+name: Gildie
 version: 1.0
-api-version: 1.20
 main: me.fifazak.gildie.GildiePlugin
-depend: [BetterTeams]
+api-version: 1.20
 commands:
   gildia:
-    description: Komenda gildii
-    usage: /gildia
+    description: Wybiera teren gildii.
   gildiamake:
-    description: Tworzenie gildii
-    usage: /gildiamake
+    description: Tworzy teren gildii.
   gildiaund:
-    description: Anulowanie tworzenia gildii
-    usage: /gildiaund
+    description: Anuluje wybór terenu gildii.

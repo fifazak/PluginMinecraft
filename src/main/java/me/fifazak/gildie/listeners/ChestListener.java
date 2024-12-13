@@ -39,7 +39,7 @@ public class ChestListener implements Listener {
         }
 
         Location clickedLocation = event.getClickedBlock().getLocation();
-        if (!isGuildChest(clickedLocation)) {
+        if (!clickedLocation.equals(plugin.getChestLocation())) {
             return;
         }
 
@@ -54,14 +54,10 @@ public class ChestListener implements Listener {
 
         if (hasRequiredItems(inventory)) {
             removeRequiredItems(inventory);
-            player.sendMessage(ChatColor.GREEN + "Odblokowałeś możliwość stworzenia gildii! Użyj " + ChatColor.YELLOW + "/gildia" + ChatColor.GREEN + " aby wybrać teren.");
+            player.sendMessage(ChatColor.GREEN + "Odblokowałeś możliwość stworzenia gildii! Użyj /gildia, aby wybrać teren.");
         } else {
             player.sendMessage(ChatColor.RED + "Nie masz wszystkich wymaganych przedmiotów w skrzynce!");
         }
-    }
-
-    private boolean isGuildChest(Location location) {
-        return location != null && location.equals(plugin.getChestLocation());
     }
 
     private boolean hasRequiredItems(Inventory inventory) {
@@ -70,8 +66,6 @@ public class ChestListener implements Listener {
     }
 
     private void removeRequiredItems(Inventory inventory) {
-        REQUIRED_ITEMS.forEach((material, amount) ->
-                inventory.removeItem(new ItemStack(material, amount))
-        );
+        REQUIRED_ITEMS.forEach((material, amount) -> inventory.removeItem(new ItemStack(material, amount)));
     }
 }

@@ -2,45 +2,33 @@ package me.fifazak.gildie;
 
 import me.fifazak.gildie.commands.GuildCommand;
 import me.fifazak.gildie.listeners.ChestListener;
-import me.fifazak.gildie.listeners.ExplosionProtectionListener;
-import me.fifazak.gildie.listeners.FireProtectionListener;
 import me.fifazak.gildie.listeners.RegionListener;
 import org.bukkit.Location;
-import org.bukkit.entity.Player;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
-
-import com.booksaw.betterTeams.PlayerRank;
-import com.booksaw.betterTeams.Team;
 
 public class GildiePlugin extends JavaPlugin {
 
-    private Location chestLocation = null;
+    private Location chestLocation;
 
     @Override
     public void onEnable() {
         getLogger().info("Plugin Gildie został włączony!");
 
-        if (getCommand("gildia") != null) {
-            getCommand("gildia").setExecutor(new GuildCommand(this));
-        }
-        if (getCommand("gildiamake") != null) {
-            getCommand("gildiamake").setExecutor(new GuildCommand(this));
-        }
-        if (getCommand("gildiaund") != null) {
-            getCommand("gildiaund").setExecutor(new GuildCommand(this));
-        }
+        // Rejestracja flag
+        CustomFlags.registerFlags();
 
-        getServer().getPluginManager().registerEvents(new ExplosionProtectionListener(), this);
+        // Ładowanie konfiguracji
+        saveDefaultConfig();
+        loadChestLocation();
+
+        // Rejestracja komend i listenerów
+        getCommand("gildia").setExecutor(new GuildCommand(this));
+        getCommand("gildiamake").setExecutor(new GuildCommand(this));
+        getCommand("gildiaund").setExecutor(new GuildCommand(this));
+
         getServer().getPluginManager().registerEvents(new ChestListener(this), this);
-        getServer().getPluginManager().registerEvents(new FireProtectionListener(), this);
         getServer().getPluginManager().registerEvents(new RegionListener(), this);
-
-        chestLocation = new Location(
-                getServer().getWorld(getConfig().getString("specialChest.world", "world")),
-                getConfig().getInt("specialChest.x", 0),
-                getConfig().getInt("specialChest.y", 64),
-                getConfig().getInt("specialChest.z", 0)
-        );
     }
 
     @Override
@@ -48,12 +36,17 @@ public class GildiePlugin extends JavaPlugin {
         getLogger().info("Plugin Gildie został wyłączony!");
     }
 
-    public Location getChestLocation() {
-        return chestLocation;
+    private void loadChestLocation() {
+        FileConfiguration config = getConfig();
+        chestLocation = new Location(
+                getServer().getWorld(config.getString("specialChest.world", "world")),
+                config.getDouble("specialChest.x", 0),
+                config.getDouble("specialChest.y", 64),
+                config.getDouble("specialChest.z", 0)
+        );
     }
 
-    public boolean isPlayerTeamLeader(Player player) {
-        Team team = Team.getTeam(player.getUniqueId());
-        return team != null && PlayerRank.OWNER.equals(team.getTeamPlayer(player).getRank());
+    public Location getChestLocation() {
+        return chestLocation;
     }
 }
