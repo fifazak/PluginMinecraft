@@ -1,5 +1,6 @@
 package me.fifazak.gildie.listeners;
 
+import com.booksaw.betterTeams.PlayerRank;
 import me.fifazak.gildie.GildiePlugin;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -44,7 +45,7 @@ public class ChestListener implements Listener {
         }
 
         Player player = event.getPlayer();
-        if (!plugin.isPlayerTeamLeader(player)) {
+        if (!plugin.equals(PlayerRank.OWNER)) {
             player.sendMessage(ChatColor.RED + "Tylko lider drużyny może korzystać z tej skrzyni!");
             return;
         }

@@ -1,5 +1,6 @@
 package me.fifazak.gildie;
 
+import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.bukkit.BukkitWorldGuardPlatform;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
 import com.sk89q.worldguard.protection.flags.StateFlag;
@@ -12,8 +13,7 @@ public class CustomFlags {
     public static StateFlag FIRE_SPREAD;
 
     public static void registerFlags() {
-        BukkitWorldGuardPlatform platform = (BukkitWorldGuardPlatform) WorldGuardPlugin.inst().getPlatform();
-        FlagRegistry registry = platform.FlagRegistry();
+        FlagRegistry registry = WorldGuard.getInstance().getFlagRegistry();
 
         try {
             TEAM_PVP = new StateFlag("team-pvp", false);

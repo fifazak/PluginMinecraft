@@ -54,7 +54,7 @@ public class GuildCommand implements CommandExecutor {
     private void onGildiaCommand(Player player) {
         Team team = Team.getTeam(player);
 
-        if (team == null || team.getRank(player) != PlayerRank.OWNER) {
+        if (team == null || team.getTeamPlayer(player).getRank() != PlayerRank.OWNER) {
             player.sendMessage(ChatColor.RED + "Tylko lider drużyny może zaznaczyć teren gildii!");
             return;
         }
@@ -80,7 +80,7 @@ public class GuildCommand implements CommandExecutor {
     private void onGildiaMakeCommand(Player player) {
         Team team = Team.getTeam(player);
 
-        if (team == null || team.getRank(player) != PlayerRank.OWNER) {
+        if (team == null || team.getTeamPlayer(player).getRank() != PlayerRank.OWNER) {
             player.sendMessage(ChatColor.RED + "Tylko lider drużyny może utworzyć gildię!");
             return;
         }
