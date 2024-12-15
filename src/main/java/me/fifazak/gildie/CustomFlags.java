@@ -13,7 +13,7 @@ public class CustomFlags {
 
     public static void registerFlags() {
         BukkitWorldGuardPlatform platform = (BukkitWorldGuardPlatform) WorldGuardPlugin.inst().getPlatform();
-        FlagRegistry registry = platform.getFlagRegistry();
+        FlagRegistry registry = platform.FlagRegistry();
 
         try {
             TEAM_PVP = new StateFlag("team-pvp", false);
